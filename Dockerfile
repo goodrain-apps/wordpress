@@ -1,13 +1,13 @@
 FROM php:7.1-fpm-alpine
 
 # docker-entrypoint.sh dependencies
-RUN apk add --no-cache \
-# in theory, docker-entrypoint.sh is POSIX-compliant, but priority is a working, consistent image
-		bash \
-# BusyBox sed is not sufficient for some of our sed expressions
-		sed
+RUN apk add --no-cache bash sed curl nginx netcat-openbsd tzdata && \
+    mkdir /run/nginx/ -pv && \
+    echo "Asia/Shanghai" >  /etc/timezone && \
+    cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    apk del --no-cache tzdata
 
-# install the PHP extensions we need
+
 RUN set -ex; \
 	\
 	apk add --no-cache --virtual .build-deps \
@@ -48,7 +48,6 @@ ENV WORDPRESS_SHA1 fbe0ee1d9010265be200fe50b86f341587187302
 RUN set -ex; \
 	curl -o wordpress.tar.gz -fSL "https://wordpress.org/wordpress-${WORDPRESS_VERSION}.tar.gz"; \
 	echo "$WORDPRESS_SHA1 *wordpress.tar.gz" | sha1sum -c -; \
-# upstream tarballs include ./wordpress/ so this gives us /usr/src/wordpress
 	tar -xzf wordpress.tar.gz -C /usr/src/; \
 	rm wordpress.tar.gz; \
 	chown -R www-data:www-data /usr/src/wordpress
