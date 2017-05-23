@@ -42,14 +42,14 @@ RUN { \
 
 VOLUME /var/www/html
 
-ENV WORDPRESS_VERSION 4.7.5
+ENV WORDPRESS_VERSION 4.7.4
 ENV WORDPRESS_SHA1 fbe0ee1d9010265be200fe50b86f341587187302
 
 RUN set -ex; \
-	curl -o wordpress.tar.gz -fSL "https://wordpress.org/wordpress-${WORDPRESS_VERSION}.tar.gz"; \
-	echo "$WORDPRESS_SHA1 *wordpress.tar.gz" | sha1sum -c -; \
-	tar -xzf wordpress.tar.gz -C /usr/src/; \
-	rm wordpress.tar.gz; \
+	curl -o wordpress.zip -fSL "https://cn.wordpress.org/wordpress-${WORDPRESS_VERSION}-zh_CN.zip"; \
+	echo "$WORDPRESS_SHA1 *wordpress.zip" | sha1sum -c -; \
+	unzip wordpress.zip -d /usr/src/; \
+	rm wordpress.zip; \
 	chown -R www-data:www-data /usr/src/wordpress
 
 COPY docker-entrypoint.sh /usr/local/bin/
