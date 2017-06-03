@@ -1,4 +1,4 @@
-# [WordPress-CN](http://app.goodrain.com/detail/142/) for [ACP](https://www.goodrain.com/ACP.html)
+# [WordPress-CN](http://app.goodrain.com/group/detail/11/) for [ACP](https://www.goodrain.com/ACP.html)
 > WordPress is a free and open source blogging tool and a content management system (CMS) based on PHP and MySQL, which runs on a web hosting service. Features include a plugin architecture and a template system. WordPress is used by more than 22.0% of the top 10 million websites as of August 2013. WordPress is the most popular blogging system in use on the Web, at more than 60 million websites. The most popular languages used are English, Spanish and Bahasa Indonesia.
 
 ![logo](http://app.goodrain.com/data/media/logo/3c93860313c244d9a23c8445868f2b61.png)
@@ -12,18 +12,19 @@
 # About this image
 This is the wordpress Chinese image, update the speed slightly slower than the official version.
 
-Can be installed in Goodrain [ACM](http://app.goodrain.com/detail/142/). Fully compatible with the Goodrain [ACP](https://www.goodrain.com/ACP.html) platform.
+Can be installed in Goodrain [ACM](http://app.goodrain.com/group/detail/11/). Fully compatible with the Goodrain [ACP](https://www.goodrain.com/ACP.html) platform.
 
 Wordpress+PHP7+Apache2
 
 # How to use this image
 
 ## Via ACM install
-[![deploy to ACP](http://ojfzu47n9.bkt.clouddn.com/20170603149649013919973.png)](http://app.goodrain.com/detail/142/)
+[![deploy to ACP](http://ojfzu47n9.bkt.clouddn.com/20170603149649013919973.png)](http://app.goodrain.com/group/detail/11/)
 
 ## Via docker-compose
+You can find the [docker-compose.ymal](https://github.com/goodrain-apps/wordpress/blob/master/docker-compose.ymal) file in the source code and run it by docker-compose
 
-
+docker-compose.ymal
 ```yaml
 version: '3.1'
 
@@ -62,6 +63,8 @@ run docker-compose
 ```
 $ docker-compose -f somepath/docker-compose.yaml up -d
 ```
+
+Visit http://localhost:8080 to open the wordpress settings page.
 
 The following environment variables are also honored for configuring your WordPress instance:
 

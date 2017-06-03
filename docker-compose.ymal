@@ -1,0 +1,32 @@
+version: '3.1'
+
+services:
+
+  wordpress:
+    container_name: wordpress
+    image: goodrainapps/wordpress:4.7.4
+    ports:
+      - 8080:80
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_USER: root
+      MYSQL_PASS: wordpress4you
+      DEBUG: 1
+    links:
+      - mysql
+    volumes:
+      - wordpress-data:/var/www/html
+    depends_on:
+      - mysql
+
+  mysql:
+    container_name: mysql
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: wordpress4you
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+volumes:
+  wordpress-data:
+  mysql-data:
