@@ -27,6 +27,6 @@ COPY etc /etc
 RUN mkdir /run/apache2/ && \
     chown apache.apache /run/apache2/ && \
     chmod +x /docker-entrypoint.sh
-
+EXPOSE 80
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["apache2"]
