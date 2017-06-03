@@ -1,4 +1,4 @@
-# WordPress-CN for [ACM](http://app.goodrain.com/detail/16/)
+# [WordPress-CN](http://app.goodrain.com/detail/16/) for [ACP](https://www.goodrain.com/ACP.html)
 > WordPress is a free and open source blogging tool and a content management system (CMS) based on PHP and MySQL, which runs on a web hosting service. Features include a plugin architecture and a template system. WordPress is used by more than 22.0% of the top 10 million websites as of August 2013. WordPress is the most popular blogging system in use on the Web, at more than 60 million websites. The most popular languages used are English, Spanish and Bahasa Indonesia.
 
 ![logo](http://app.goodrain.com/data/media/logo/3c93860313c244d9a23c8445868f2b61.png)
@@ -12,7 +12,7 @@ latest,4.7.4 [Dockerfile](https://github.com/goodrain-apps/wordpress/blob/master
 # About this image
 This is the wordpress Chinese image, update the speed slightly slower than the official version.
 
-Can be installed in a Goodrain [ACM](http://app.goodrain.com/detail/16/). Fully compatible with the Goodrain [ACP](https://www.goodrain.com/ACP.html) platform.
+Can be installed in Goodrain [ACM](http://app.goodrain.com/detail/16/). Fully compatible with the Goodrain [ACP](https://www.goodrain.com/ACP.html) platform.
 
 Wordpress+PHP7+Apache2
 
