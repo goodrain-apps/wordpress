@@ -6,7 +6,7 @@
 
 # Supported tags and Dockerfile links
 
-latest,4.7.4 [Dockerfile](https://github.com/goodrain-apps/wordpress/blob/master/Dockerfile)
+- latest,4.7.4 [Dockerfile](https://github.com/goodrain-apps/wordpress/blob/master/Dockerfile)
 
 
 # About this image
@@ -19,7 +19,7 @@ Wordpress+PHP7+Apache2
 # How to use this image
 
 ## Via ACM install
-<a href="http://app.goodrain.com/detail/16/"><img src="http://ojfzu47n9.bkt.clouddn.com/20170603149648873351323.png" style="zoom:40%" /></a>
+[![deploy to ACP](http://ojfzu47n9.bkt.clouddn.com/20170603149649013919973.png)](http://app.goodrain.com/detail/16/)
 
 ## Via docker-compose
 
