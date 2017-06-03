@@ -6,12 +6,38 @@ if [ ! -n "${!MYSQL_*}" ]; then
   echo "Please link the MySQL application!"
 	exit 1
 else
-	DB_HOST=${MYSQL_HOST:-127.0.0.1}:${MYSQL_PORT:3306}
+  MYSQL_HOST=${MYSQL_HOST:-127.0.0.1}
+  MYSQL_PORT=${MYSQL_PORT:-3306}
+  MYSQL_USER=${MYSQL_USER:-root}
+  MYSQL_PASS=${MYSQL_PASS:-`head -c1m /dev/urandom | sha1sum | cut -d' ' -f1`}
+
+	DB_HOST=${MYSQL_HOST}:${MYSQL_PORT}
 	WORDPRESS_DB_NAME=${WORDPRESS_DB_NAME:-wordpress}
 	WORDPRESS_TABLE_PREFIX=${WORDPRESS_TABLE_PREFIX:-wp_}
 	WORDPRESS_DEBUG=${WORDPRESS_DEBUG:-1}
+  MAXWAIT=${MAXWAIT:-30}
+
 fi
 
+# waitting mysql is ready
+wait=0
+while [ $wait -lt $MAXWAIT ]
+do
+    nc -w 1 -v $MYSQL_HOST $MYSQL_PORT > /dev/null 2>&1
+    if [ $? -eq 0 ];then
+      echo "MySQL is ready."
+      break
+    fi
+
+    ((wait++))
+    echo "Waiting MySQL service $wait seconds"
+    sleep 1
+done
+
+if [ "$wait" == "$MAXWAIT" ]; then
+ echo >&2 'Can not connect to the MySQL database,Wordpress failed to start.'
+ exit 1
+fi
 
 if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 	if ! [ -e index.php -a -e wp-includes/version.php ]; then
@@ -19,9 +45,11 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 		if [ "$(ls -A)" ]; then
 			echo >&2 "WARNING: $PWD is not empty - press Ctrl+C now if this is an error!"
 			( set -x; ls -A; sleep 10 )
-		fi
-		tar cf - --one-file-system -C /usr/src/wordpress . | tar xf -
-		echo >&2 "Complete! WordPress has been successfully copied to $PWD"
+		else
+		  tar cf - --one-file-system -C /usr/src/wordpress . | tar xf -
+		  echo >&2 "Complete! WordPress has been successfully copied to $PWD"
+    fi
+
 		if [ ! -e .htaccess ]; then
 			# NOTE: The "Indexes" option is disabled in the php:apache base image
 			cat > .htaccess <<-'EOF'
@@ -115,7 +143,7 @@ EOPHP
 
 sleep ${PAUSE:-0}
 
-TERM=dumb php -- "${MYSQL_HOST}:${MYSQL_PORT}" "$MYSQL_USER" "$MYSQL_PASS" "$WORDPRESS_DB_NAME" <<'EOPHP'
+TERM=dumb php -- "${DB_HOST}" "$MYSQL_USER" "$MYSQL_PASS" "$WORDPRESS_DB_NAME" <<'EOPHP'
 <?php
 // database might not exist, so let's try creating it (just to be safe)
 
@@ -130,6 +158,7 @@ do {
 		fwrite($stderr, "\n" . 'MySQL Connection Error: (' . $mysql->connect_errno . ') ' . $mysql->connect_error . "\n");
 		--$maxTries;
 		if ($maxTries <= 0) {
+      fwrite($stderr, "\n" . "Can not connect to the MySQL database, please check whether MySQL is ready.");
 			exit(1);
 		}
 		sleep(3);
