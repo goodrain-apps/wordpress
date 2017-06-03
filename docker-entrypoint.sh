@@ -1,27 +1,17 @@
 #!/bin/bash
-set -euo pipefail
 
-# usage: file_env VAR [DEFAULT]
-#    ie: file_env 'XYZ_DB_PASSWORD' 'example'
-# (will allow for "$XYZ_DB_PASSWORD_FILE" to fill in the value of
-#  "$XYZ_DB_PASSWORD" from a file, especially for Docker's secrets feature)
-file_env() {
-	local var="$1"
-	local fileVar="${var}_FILE"
-	local def="${2:-}"
-	if [ "${!var:-}" ] && [ "${!fileVar:-}" ]; then
-		echo >&2 "error: both $var and $fileVar are set (but are exclusive)"
-		exit 1
-	fi
-	local val="$def"
-	if [ "${!var:-}" ]; then
-		val="${!var}"
-	elif [ "${!fileVar:-}" ]; then
-		val="$(< "${!fileVar}")"
-	fi
-	export "$var"="$val"
-	unset "$fileVar"
-}
+[ $DEBUG ]  && set -x
+
+if [ ! -n "${!MYSQL_*}" ]; then
+  echo "Please link the MySQL application!"
+	exit 1
+else
+	DB_HOST=${MYSQL_HOST:-127.0.0.1}:${MYSQL_PORT:3306}
+	WORDPRESS_DB_NAME=${WORDPRESS_DB_NAME:-wordpress}
+	WORDPRESS_TABLE_PREFIX=${WORDPRESS_TABLE_PREFIX:-wp_}
+	WORDPRESS_DEBUG=${WORDPRESS_DEBUG:-1}
+fi
+
 
 if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 	if ! [ -e index.php -a -e wp-includes/version.php ]; then
@@ -46,11 +36,9 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 				</IfModule>
 				# END WordPress
 			EOF
-			chown www-data:www-data .htaccess
+			chown apache:apache .htaccess
 		fi
 	fi
-
-	# TODO handle WordPress upgrades magically in the same way, but only if wp-includes/version.php's $wp_version is less than /usr/src/wordpress/wp-includes/version.php's $wp_version
 
 	# allow any of these "Authentication Unique Keys and Salts." to be specified via
 	# environment variables with a "WORDPRESS_" prefix (ie, "WORDPRESS_AUTH_KEY")
@@ -64,50 +52,10 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 		LOGGED_IN_SALT
 		NONCE_SALT
 	)
-	envs=(
-		WORDPRESS_DB_HOST
-		WORDPRESS_DB_USER
-		WORDPRESS_DB_PASSWORD
-		WORDPRESS_DB_NAME
-		"${uniqueEnvs[@]/#/WORDPRESS_}"
-		WORDPRESS_TABLE_PREFIX
-		WORDPRESS_DEBUG
-	)
-	haveConfig=
-	for e in "${envs[@]}"; do
-		file_env "$e"
-		if [ -z "$haveConfig" ] && [ -n "${!e}" ]; then
-			haveConfig=1
-		fi
-	done
-
-	# linking backwards-compatibility
-	if [ -n "${!MYSQL_ENV_MYSQL_*}" ]; then
-		haveConfig=1
-		# host defaults to "mysql" below if unspecified
-		: "${WORDPRESS_DB_USER:=${MYSQL_ENV_MYSQL_USER:-root}}"
-		if [ "$WORDPRESS_DB_USER" = 'root' ]; then
-			: "${WORDPRESS_DB_PASSWORD:=${MYSQL_ENV_MYSQL_ROOT_PASSWORD:-}}"
-		else
-			: "${WORDPRESS_DB_PASSWORD:=${MYSQL_ENV_MYSQL_PASSWORD:-}}"
-		fi
-		: "${WORDPRESS_DB_NAME:=${MYSQL_ENV_MYSQL_DATABASE:-}}"
-	fi
-
-	# only touch "wp-config.php" if we have environment-supplied configuration values
-	if [ "$haveConfig" ]; then
-		: "${WORDPRESS_DB_HOST:=mysql}"
-		: "${WORDPRESS_DB_USER:=root}"
-		: "${WORDPRESS_DB_PASSWORD:=}"
-		: "${WORDPRESS_DB_NAME:=wordpress}"
-
-		# version 4.4.1 decided to switch to windows line endings, that breaks our seds and awks
-		# https://github.com/docker-library/wordpress/issues/116
-		# https://github.com/WordPress/WordPress/commit/1acedc542fba2482bab88ec70d4bea4b997a92e4
-		sed -ri -e 's/\r$//' wp-config*
 
 		if [ ! -e wp-config.php ]; then
-			awk '/^\/\*.*stop editing.*\*\/$/ && c == 0 { c = 1; system("cat") } { print }' wp-config-sample.php > wp-config.php <<'EOPHP'
+			awk '/^\/\*.*stop editing.*\*\/$/ && c == 0 { c = 1; system("cat") } { print }' wp-config-sample.php > wp-config.php
+			cat >> wp-config.php <<'EOPHP'
 // If we're behind a proxy server and using HTTPS, we need to alert Wordpress of that fact
 // see also http://codex.wordpress.org/Administration_Over_SSL#Using_a_Reverse_Proxy
 if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
@@ -115,8 +63,10 @@ if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROT
 }
 
 EOPHP
-			chown www-data:www-data wp-config.php
+			chown apache.apache wp-config.php
 		fi
+
+    sed -ri -e 's/\r$//' wp-config*
 
 		# see http://stackoverflow.com/a/2705678/433558
 		sed_escape_lhs() {
@@ -141,10 +91,12 @@ EOPHP
 			sed -ri -e "s/($start\s*).*($end)$/\1$(sed_escape_rhs "$(php_escape "$value" "$var_type")")\3/" wp-config.php
 		}
 
-		set_config 'DB_HOST' "$WORDPRESS_DB_HOST"
-		set_config 'DB_USER' "$WORDPRESS_DB_USER"
-		set_config 'DB_PASSWORD' "$WORDPRESS_DB_PASSWORD"
+		set_config 'DB_HOST' "$MYSQL_HOST:$MYSQL_PORT"
+		set_config 'DB_USER' "$MYSQL_USER"
+		set_config 'DB_PASSWORD' "$MYSQL_PASS"
 		set_config 'DB_NAME' "$WORDPRESS_DB_NAME"
+		set_config '$table_prefix' "$WORDPRESS_TABLE_PREFIX"
+		set_config 'WP_DEBUG' 1 boolean
 
 		for unique in "${uniqueEnvs[@]}"; do
 			uniqVar="WORDPRESS_$unique"
@@ -159,37 +111,21 @@ EOPHP
 			fi
 		done
 
-		if [ "$WORDPRESS_TABLE_PREFIX" ]; then
-			set_config '$table_prefix' "$WORDPRESS_TABLE_PREFIX"
-		fi
 
-		if [ "$WORDPRESS_DEBUG" ]; then
-			set_config 'WP_DEBUG' 1 boolean
-		fi
 
-		TERM=dumb php -- <<'EOPHP'
+sleep ${PAUSE:-0}
+
+TERM=dumb php -- "${MYSQL_HOST}:${MYSQL_PORT}" "$MYSQL_USER" "$MYSQL_PASS" "$WORDPRESS_DB_NAME" <<'EOPHP'
 <?php
 // database might not exist, so let's try creating it (just to be safe)
 
 $stderr = fopen('php://stderr', 'w');
 
-// https://codex.wordpress.org/Editing_wp-config.php#MySQL_Alternate_Port
-//   "hostname:port"
-// https://codex.wordpress.org/Editing_wp-config.php#MySQL_Sockets_or_Pipes
-//   "hostname:unix-socket-path"
-list($host, $socket) = explode(':', getenv('WORDPRESS_DB_HOST'), 2);
-$port = 0;
-if (is_numeric($socket)) {
-	$port = (int) $socket;
-	$socket = null;
-}
-$user = getenv('WORDPRESS_DB_USER');
-$pass = getenv('WORDPRESS_DB_PASSWORD');
-$dbName = getenv('WORDPRESS_DB_NAME');
+list($host, $port) = explode(':', $argv[1], 2);
 
-$maxTries = 10;
+$maxTries = 20;
 do {
-	$mysql = new mysqli($host, $user, $pass, '', $port, $socket);
+	$mysql = new mysqli($host, $argv[2], $argv[3], '', (int)$port);
 	if ($mysql->connect_error) {
 		fwrite($stderr, "\n" . 'MySQL Connection Error: (' . $mysql->connect_errno . ') ' . $mysql->connect_error . "\n");
 		--$maxTries;
@@ -200,7 +136,7 @@ do {
 	}
 } while ($mysql->connect_error);
 
-if (!$mysql->query('CREATE DATABASE IF NOT EXISTS `' . $mysql->real_escape_string($dbName) . '`')) {
+if (!$mysql->query('CREATE DATABASE IF NOT EXISTS `' . $mysql->real_escape_string($argv[4]) . '`')) {
 	fwrite($stderr, "\n" . 'MySQL "CREATE DATABASE" Error: ' . $mysql->error . "\n");
 	$mysql->close();
 	exit(1);
@@ -210,10 +146,5 @@ $mysql->close();
 EOPHP
 	fi
 
-	# now that we're definitely done writing configuration, let's clear out the relevant envrionment variables (so that stray "phpinfo()" calls don't leak secrets from our code)
-	for e in "${envs[@]}"; do
-		unset "$e"
-	done
-fi
 
-exec "$@"
+exec httpd -k start -DFOREGROUND
