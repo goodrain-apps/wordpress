@@ -68,7 +68,7 @@ Visit http://localhost:8080 to open the wordpress settings page.
 
 The following environment variables are also honored for configuring your WordPress instance:
 
-| ENV Name                   | default   | comment                              |
+| Name                       | default   | comments                             |
 | -------------------------- | --------- | ------------------------------------ |
 | MYSQL_HOST                 | 127.0.0.1 | mysql host ip                        |
 | MYSQL_PORT                 | 3306      | mysql service port                   |
