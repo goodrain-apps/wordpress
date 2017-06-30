@@ -2,6 +2,36 @@
 
 [ $DEBUG ]  && set -x
 
+PHP_CFG="/etc/php7/php.ini"
+DELIMITER="="
+
+# php.ini config
+export CFG_UPLOAD_MAX_FILESIZE=${CFG_UPLOAD_MAX_FILESIZE:-128M}
+export CFG_POST_MAX_SIZE=${CFG_POST_MAX_SIZE:-128M}
+
+
+function set_config() {
+    CONFIG_FILE=$1
+    CFG=($( env | sed -nr "s/CFG_([0-9A-Z_a-z-]*)/\1/p"|tr A-Z a-z))
+
+    for CFG_KEY in "${CFG[@]}"; do
+        KEY=`echo $CFG_KEY | cut -d = -f 1`
+        VAR=`echo $CFG_KEY | cut -d = -f 2`
+        if [ "$VAR" == "" ]; then
+            echo "Empty volue for option \"$KEY\"."
+            continue
+        fi
+        grep -q "$KEY" $CONFIG_FILE
+        if (($? > 0)); then
+            echo "${KEY}${DELIMITER}${VAR}" >> $CONFIG_FILE
+            echo "Config add option for \"$KEY\"."
+        else
+            sed -i -r "s~#?($KEY)[ ]*${DELIMITER}.*~\1 ${DELIMITER} $VAR~g" $CONFIG_FILE  >/dev/null 2>&1
+            echo "Option found for \"$KEY\"."
+        fi
+    done
+}
+
 if [ ! -n "${!MYSQL_*}" ]; then
   echo "Please link the MySQL application!"
 	exit 1
@@ -174,6 +204,9 @@ if (!$mysql->query('CREATE DATABASE IF NOT EXISTS `' . $mysql->real_escape_strin
 $mysql->close();
 EOPHP
 	fi
+
+echo "Check and set php config..."
+set_config $PHP_CFG
 
 
 exec httpd -k start -DFOREGROUND
