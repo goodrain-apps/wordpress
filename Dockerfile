@@ -19,7 +19,7 @@ RUN set -ex; \
   mkdir -pv /usr/src/; \
 	curl -o wordpress.zip -fSL "https://cn.wordpress.org/wordpress-${WORDPRESS_VERSION}-zh_CN.zip"; \
   #echo "$WORDPRESS_MD5 *wordpress.zip" | md5sum -c -;\
-  echo "$WORDPRESS_SHA1 *wordpress.tar.gz" | sha1sum -c -; \
+  echo "$WORDPRESS_SHA1 *wordpress.zip" | sha1sum -c -; \
 	unzip wordpress.zip -d /usr/src/; \
 	rm wordpress.zip; \
 	chown -R apache:apache /usr/src/wordpress
