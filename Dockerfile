@@ -11,15 +11,13 @@ WORKDIR /var/www/html
 VOLUME /var/www/html
 
 ENV WORDPRESS_VERSION 4.9.1
-#ENV WORDPRESS_MD5 5455f6a373ecac37807f98a75018d7ad
-ENV WORDPRESS_SHA1 892d2c23b9d458ec3d44de59b753adb41012e903
+ENV WORDPRESS_MD5 1814c4f2b05c2e629a34e3ded09628f6
 
 
 RUN set -ex; \
   mkdir -pv /usr/src/; \
 	curl -o wordpress.zip -fSL "https://cn.wordpress.org/wordpress-${WORDPRESS_VERSION}-zh_CN.zip"; \
-  #echo "$WORDPRESS_MD5 *wordpress.zip" | md5sum -c -;\
-  echo "$WORDPRESS_SHA1 *wordpress.zip" | sha1sum -c -; \
+  echo "$WORDPRESS_MD5 *wordpress.zip" | md5sum -c -;\
 	unzip wordpress.zip -d /usr/src/; \
 	rm wordpress.zip; \
 	chown -R apache:apache /usr/src/wordpress
