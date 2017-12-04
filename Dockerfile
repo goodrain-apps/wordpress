@@ -10,7 +10,7 @@ php7-ctype php7-curl php7-imagick  php7-zip php7-zlib
 WORKDIR /var/www/html
 VOLUME /var/www/html
 
-ENV WORDPRESS_VERSION 4.7.4
+ENV WORDPRESS_VERSION 4.9.1
 ENV WORDPRESS_MD5 5455f6a373ecac37807f98a75018d7ad
 
 
