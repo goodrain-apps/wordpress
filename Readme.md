@@ -6,7 +6,7 @@
 
 # Supported tags and Dockerfile links
 
-- latest,4.7.4 [Dockerfile](https://github.com/goodrain-apps/wordpress/blob/master/Dockerfile)
+- latest,4.9.1 [Dockerfile](https://github.com/goodrain-apps/wordpress/blob/master/Dockerfile)
 
 
 # About this image
@@ -32,7 +32,7 @@ services:
 
   wordpress:
     container_name: wordpress
-    image: goodrainapps/wordpress:4.7.4
+    image: goodrainapps/wordpress:4.9.1
     ports:
       - 8080:80
     environment:
